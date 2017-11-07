@@ -734,14 +734,17 @@ class Sanic:
                 protocol=HttpProtocol, backlog=100, stop_event=None,
                 register_sys_signals=True, run_async=False, access_log=True):
         """Helper function used by `run` and `create_server`."""
-        if isinstance(ssl, dict):
-            # try common aliaseses
-            cert = ssl.get('cert') or ssl.get('certificate')
-            key = ssl.get('key') or ssl.get('keyfile')
-            if cert is None or key is None:
-                raise ValueError("SSLContext or certificate and key required.")
+        if isinstance(ssl, (dict, list, tuple)):
             context = create_default_context(purpose=Purpose.CLIENT_AUTH)
-            context.load_cert_chain(cert, keyfile=key)
+            if isinstance(ssl, dict):
+                ssl = [ssl]
+            for info in ssl:
+                # try common aliaseses
+                cert = info.get('cert') or info.get('certificate')
+                key = info.get('key') or info.get('keyfile')
+                if cert is None or key is None:
+                    raise ValueError("SSLContext or certificate and key required.")
+                context.load_cert_chain(cert, keyfile=key)
             ssl = context
         if stop_event is not None:
             if debug:
